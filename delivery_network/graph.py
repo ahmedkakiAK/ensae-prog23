@@ -1,3 +1,5 @@
+import sys
+
 class Graph:
     """
     A class representing graphs as adjacency lists and implementing various algorithms on the graphs. Graphs in the class are not oriented. 
@@ -68,9 +70,75 @@ class Graph:
         self.graph[node2].append((node1, power_min, dist))
         self.nb_edges += 1
     
+    def get_neighbours(self, node):
+        return [nodes[0] for nodes in self.graph[node]]
+    
+    def get_power(self, node1, node2):
+        for i in range(len(self.graph[node1])):
+            if self.graph[node1][0] == node2:
+                return self.graph[node1][1]
+            
+    def get_dist(self, node1, node2):
+        for i in range(len(self.graph[node1])):
+            if self.graph[node1][0] == node2:
+                return self.graph[node1][2]
 
+    
     def get_path_with_power(self, src, dest, power):
-        raise NotImplementedError
+        for cc in self.connected_components_set():
+            if src in cc and dest not in cc:
+                return None 
+                break
+            elif src and dest in cc:
+                def disjkstra(src, dest):
+                    visited_nodes = []
+                    shortest_dist = {}
+                    previous_nodes = {node: None for node in cc}
+
+                    for node in cc:
+                        shortest_dist[node] = sys.maxsize
+                    shortest_dist[src] = 0
+                    
+                    while len(visited_nodes) < len(cc):
+                        
+                        current_min_dist = sys.maxsize
+                        current_min_node = None
+                        for node, dist in shortest_dist.items():
+                            if node not in visited_nodes and dist < current_min_dist:
+                                current_min_dist = dist
+                                current_min_node = node
+                        
+                        if current_min_node is None:
+                            break
+                        
+                        visited_nodes.append(current_min_node)
+                        
+                        for (neighbour, dist, p) in self.graph[current_min_node]:
+                            if power >= p:
+                                path_distance = shortest_dist[current_min_node] + dist
+                                if path_distance < shortest_dist[neighbour]:
+                                    shortest_dist[neighbour] = path_distance
+                                    previous_nodes[neighbour] = current_min_node
+                    
+                    if shortest_dist[dest] == sys.maxsize:
+                        return None
+                    else:
+                        path = []
+                        current_node = dest
+                        while current_min_node !=src:
+                            path.append(current_node)
+                            current_node = previous_nodes[current_node]
+                        return path[::-1]
+                return disjkstra(src, dest)
+                
+                
+
+
+                                    
+                
+                
+                
+        
     
 
     def connected_components(self):
@@ -134,7 +202,7 @@ def graph_from_file(filename):
             edge = list(map(int, file.readline().split()))
             if len(edge) == 3:
                 node1, node2, power_min = edge
-                g.add_edge(node1, node2, power_min) # will add dist=1 by default
+                g.add_edge(node1, node2, power_min, 1) # will add dist=1 by default
             elif len(edge) == 4:
                 node1, node2, power_min, dist = edge
                 g.add_edge(node1, node2, power_min, dist)
