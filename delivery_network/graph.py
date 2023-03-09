@@ -74,7 +74,23 @@ class Graph:
     
 
     def connected_components(self):
-        raise NotImplementedError
+        list_cc = []
+        visited_nodes = {node:False for node in self.nodes}
+        
+        def dfs(node):
+            component = [node]
+            visited_nodes[node] = True
+            for neighbour in self.graph[node]:
+                neighbour = neighbour[0]
+                if not visited_nodes[neighbour]:
+                    component += dfs(neighbour)
+            return component
+        
+        for node in self.nodes:
+            if not visited_nodes[node]:
+                list_cc.append(dfs(node))
+        
+        return list_cc
 
 
     def connected_components_set(self):
