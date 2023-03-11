@@ -91,45 +91,41 @@ class Graph:
                 break
             elif src and dest in cc:
                 def disjkstra(src, dest):
-                    visited_nodes = []
-                    shortest_dist = {}
+                    weights = {node: sys.maxsize for node in cc}
+                    weights[src] = 0
+                    visited = {node: False for node in cc}
                     previous_nodes = {node: None for node in cc}
+                    
+                    while not all(visited.values()):
+                        min_weight = sys.maxsize
+                        min_node = None
+                        for node in cc:
+                            if not visited[node] and min_weight > weights[node]:
+                                min_weight = weights[node]
+                                min_node = node
+                        
+                    visited[min_node] = True
 
-                    for node in cc:
-                        shortest_dist[node] = sys.maxsize
-                    shortest_dist[src] = 0
-                    
-                    while len(visited_nodes) < len(cc):
-                        
-                        current_min_dist = sys.maxsize
-                        current_min_node = None
-                        for node, dist in shortest_dist.items():
-                            if node not in visited_nodes and dist < current_min_dist:
-                                current_min_dist = dist
-                                current_min_node = node
-                        
-                        if current_min_node is None:
-                            break
-                        
-                        visited_nodes.append(current_min_node)
-                        
-                        for (neighbour, dist, p) in self.graph[current_min_node]:
-                            if power >= p:
-                                path_distance = shortest_dist[current_min_node] + dist
-                                if path_distance < shortest_dist[neighbour]:
-                                    shortest_dist[neighbour] = path_distance
-                                    previous_nodes[neighbour] = current_min_node
-                    
-                    if shortest_dist[dest] == sys.maxsize:
+                    for neighbour, dist, p in self.graph[min_node]:
+                        if p < power:
+                            if not visited[neighbour]:
+                                new_weight = weights[min_node] + dist
+                                if new_weight < weights[neighbour]:
+                                    weights[neighbour] = new_weight
+                                    previous_nodes[neighbour] = min_node
+
+                    path = []
+                    node = dest
+                    while node is not None:
+                        path.append(node)
+                        node = previous_nodes[node]
+
+                    if path == []:
                         return None
                     else:
-                        path = []
-                        current_node = dest
-                        while current_min_node !=src:
-                            path.append(current_node)
-                            current_node = previous_nodes[current_node]
-                        return path[::-1]
-                return disjkstra(src, dest)
+                        return path
+                return disjkstra(src,dest)
+
                 
                 
 
