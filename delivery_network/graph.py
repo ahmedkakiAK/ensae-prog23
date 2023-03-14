@@ -274,6 +274,37 @@ def kruskal(g):
     return mst
     
 
+def min_power2(g, src, dest):
+    mst = kruskal(g)
+
+    visited_nodes = {node: False for node in mst.nodes}
+    parent = {}
+
+    def dfs(node):
+            visited_nodes[node] = True
+            for neighbour in mst.graph[node]:
+                neighbour = neighbour[0]
+                if not visited_nodes[neighbour]:
+                    parent[neighbour] = node
+                    dfs(neighbour)
+
+    dfs(src)
+
+    if visited_nodes[dest] == False:
+        return None
+    
+    path = [dest]
+    while path[-1] != src:
+        path.append(parent[path[-1]])
+    path.reverse()
+    min_power = sys.maxsize
+    for i in range(len(path) - 1):
+        for neighbour, power, dist in mst.graph[path[i]]:
+            if neighbour == path[i+1] and min_power > power:
+                min_power = power
+    return path, min_power
+
+
 
 
 
