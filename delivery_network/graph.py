@@ -1,4 +1,6 @@
+import time
 import sys
+
 
 class Graph:
     """
@@ -30,6 +32,7 @@ class Graph:
         self.graph = dict([(n, []) for n in nodes])
         self.nb_nodes = len(nodes)
         self.nb_edges = 0
+        self.powers = []
     
 
     def __str__(self):
@@ -83,60 +86,63 @@ class Graph:
             if self.graph[node1][0] == node2:
                 return self.graph[node1][2]
 
-    
+
     def get_path_with_power(self, src, dest, power):
-        for cc in self.connected_components_set():
-            if src in cc and dest not in cc:
-                return None 
-                break
-            elif src and dest in cc:
-                def disjkstra(src, dest):
-                    weights = {node: sys.maxsize for node in cc}
-                    weights[src] = 0
-                    visited = {node: False for node in cc}
-                    previous_nodes = {node: None for node in cc}
-                    
-                    while not all(visited.values()):
-                        min_weight = sys.maxsize
-                        min_node = None
-                        for node in cc:
-                            if not visited[node] and min_weight > weights[node]:
-                                min_weight = weights[node]
-                                min_node = node
-                        
-                    visited[min_node] = True
+        visited = []
+        queue = [(src, [])]
+        while queue:
+            node, path = queue.pop(0)
+            if node not in visited:
+                visited.append(node)
+                if node == dest:
+                    return path + [node]
+                for neighbor, p, dist in self.graph[node]:
+                    if p <= power:    
+                        if neighbor not in visited:
+                            queue.append((neighbor, path + [node]))
+        return None
 
-                    for neighbour, dist, p in self.graph[min_node]:
-                        if p < power:
-                            if not visited[neighbour]:
-                                new_weight = weights[min_node] + dist
-                                if new_weight < weights[neighbour]:
-                                    weights[neighbour] = new_weight
-                                    previous_nodes[neighbour] = min_node
-
-                    path = []
-                    node = dest
-                    while node is not None:
-                        path.append(node)
-                        node = previous_nodes[node]
-
-                    if path == []:
-                        return None
-                    else:
-                        return path
-                return disjkstra(src,dest)
-
-                
-                
-
-
-                                    
-                
-                
-                
-        
     
+    def get_shortest_path_with_power(self, src, dest, power):
+        for cc in self.connected_components():
+            if src in cc and dest not in cc:
+                return None
+            elif src and dest in cc:
+                temp_graph = self.graph
+                for node in cc:
+                    for tuple in temp_graph[node]:
+                        if tuple[1] > power:
+                            temp_graph[node].remove(tuple)
 
+                def disjkstra(g, s):
+                    inf = sys.maxsize
+                    visited = {s: [0, [s]]}
+                    unvisited = {node: [inf, ""] for node in g if node != s}
+                    for neighbour, p, dist in g[s]:
+                        unvisited[neighbour] = [dist, s]
+
+                    while unvisited and any(unvisited[node][0] < inf for node in unvisited):
+                        min_node = min(unvisited, key = unvisited.get)
+                        min_dist, previous_node = unvisited[min_node]
+                        for neighbour, p, dist in g[min_node]:
+                            if neighbour in unvisited:
+                                d = min_dist + dist
+                                if d < unvisited[neighbour][0]:
+                                    unvisited[neighbour] = [d, min_node]
+                        visited[min_node] = [min_dist, visited[previous_node][1] + [min_node]]
+                        del unvisited[min_node]
+                        
+                    for node in unvisited:
+                        visited[node] = [None, None]
+
+                    return visited
+                
+                visited = disjkstra(temp_graph, src)
+                return visited[dest][1]
+            
+
+    
+                    
     def connected_components(self):
         list_cc = []
         visited_nodes = {node:False for node in self.nodes}
@@ -168,7 +174,27 @@ class Graph:
         """
         Should return path, min_power. 
         """
-        raise NotImplementedError
+        list_powers = sorted(self.powers)
+        x = 0
+        y = len(list_powers) - 1
+        m = (x+y)//2
+
+        while x < y:
+            if self.get_path_with_power(src, dest, list_powers[m]) != None:
+                y = m
+            else:
+                x = m + 1
+            m = (x+y)//2
+        path = self.get_path_with_power(src, dest, list_powers[x])
+        if path != None:
+            power = list_powers[x]
+        else:
+            power = None
+        return path, power        
+
+                    
+                
+
 
 
 def graph_from_file(filename):
@@ -198,10 +224,61 @@ def graph_from_file(filename):
             edge = list(map(int, file.readline().split()))
             if len(edge) == 3:
                 node1, node2, power_min = edge
-                g.add_edge(node1, node2, power_min, 1) # will add dist=1 by default
+                g.add_edge(node1, node2, power_min, 1)
+                g.powers.append(power_min) # will add dist=1 by default
             elif len(edge) == 4:
                 node1, node2, power_min, dist = edge
                 g.add_edge(node1, node2, power_min, dist)
+                g.powers.append(power_min)
             else:
                 raise Exception("Format incorrect")
     return g
+
+
+class UnionFind:
+    def __init__(self, vertices):
+        self.parents = {v: v for v in vertices}
+        self.sizes = {v: 1 for v in vertices}
+
+    def find(self, x):
+        if x != self.parents[x]:
+            self.parents[x] = self.find(self.parents[x])
+        return self.parents[x]
+
+    def union(self, x, y):
+        root_x, root_y = self.find(x), self.find(y)
+        if root_x == root_y:
+            return False
+        if self.sizes[root_x] < self.sizes[root_y]:
+            root_x, root_y = root_y, root_x
+        self.parents[root_y] = root_x
+        self.sizes[root_x] += self.sizes[root_y]
+        return True
+
+
+def kruskal(g):
+    edges = []
+    for node in g.nodes:
+        for neighbor, power, dist in g.graph[node]:
+            edges.append((power, node, neighbor))
+    edges.sort()
+    vertices = set(g.nodes)
+    uf = UnionFind(vertices)
+    mst = Graph(g.nodes)
+    for  power, node, neighbor in edges:
+        if uf.union(node, neighbor):
+            mst.graph[node].append((neighbor, power, 1))
+            mst.graph[neighbor].append((node, power, 1))
+
+            
+    return mst
+    
+
+
+
+
+
+
+
+
+
