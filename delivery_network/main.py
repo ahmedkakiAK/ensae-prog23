@@ -6,7 +6,7 @@ data_path = "input/"
 file_name = "network.1.in"
 
 
-def duration(i):
+def duration(i): # Fonction permettant de trouver le temps d'éxecution de min_power pour un graphe correspondant à network.i.in
     g = graph_from_file(data_path + "network." + str(i) + ".in")
     route_file = 'input/routes.' + str(i) + '.in'
     times = []
@@ -23,7 +23,7 @@ def duration(i):
     return n * mean(times)
 
 
-def duration2(i):
+def duration2(i): # Fonction permettant de calculer le temps d'exécution de min_power2 pour network.i.in et de stocker les puissances minimales dans un fichier
     g = graph_from_file(data_path + "network." + str(i) + ".in")
     route_file = 'input/routes.' + str(i) + '.in'
     times = []
@@ -41,4 +41,4 @@ def duration2(i):
 
     return sum(times)
 
-
+print(duration2(2))

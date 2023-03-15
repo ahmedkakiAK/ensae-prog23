@@ -103,7 +103,7 @@ class Graph:
         return None
 
     
-    def get_shortest_path_with_power(self, src, dest, power):
+    def get_shortest_path_with_power(self, src, dest, power): # Fonction utilisant l'algorithme de dijkstra pour trouver le plus court chemin entre src et dest
         for cc in self.connected_components():
             if src in cc and dest not in cc:
                 return None
@@ -114,10 +114,10 @@ class Graph:
                         if tuple[1] > power:
                             temp_graph[node].remove(tuple)
 
-                def disjkstra(g, s):
+                def disjkstra(g, s): # Prend en argument le graphe et la source
                     inf = sys.maxsize
-                    visited = {s: [0, [s]]}
-                    unvisited = {node: [inf, ""] for node in g if node != s}
+                    visited = {s: [0, [s]]} 
+                    unvisited = {node: [inf, ""] for node in g if node != s} # On donne à tous les noeuds non visités l'infini comme poids
                     for neighbour, p, dist in g[s]:
                         unvisited[neighbour] = [dist, s]
 
@@ -135,7 +135,8 @@ class Graph:
                     for node in unvisited:
                         visited[node] = [None, None]
 
-                    return visited
+                    return visited # La fonction renvoie un dictionnaire dont les clés sont les noeuds et leur valeur une liste contenant la distance minimale entre ce noeud et la source, ainsi que le chemin entre les deux
+                
                 
                 visited = disjkstra(temp_graph, src)
                 return visited[dest][1]
@@ -147,7 +148,7 @@ class Graph:
         list_cc = []
         visited_nodes = {node:False for node in self.nodes}
         
-        def dfs(node):
+        def dfs(node): # Parcours en profondeur du graphe à partir de node
             component = [node]
             visited_nodes[node] = True
             for neighbour in self.graph[node]:
@@ -156,7 +157,7 @@ class Graph:
                     component += dfs(neighbour)
             return component
         
-        for node in self.nodes:
+        for node in self.nodes: # Le parcours en profondeur permet de distinguer le composantes connexes
             if not visited_nodes[node]:
                 list_cc.append(dfs(node))
         
@@ -235,17 +236,17 @@ def graph_from_file(filename):
     return g
 
 
-class UnionFind:
+class UnionFind: # Création de la classe UnionFind qui nous permettra de vérifier si l'ajout d'un arête dans le mst constituera un cycle ou pas
     def __init__(self, vertices):
         self.parents = {v: v for v in vertices}
         self.sizes = {v: 1 for v in vertices}
 
-    def find(self, x):
+    def find(self, x): # Cette méthode permet de toruver la classe d'équivalence de l'élément x
         if x != self.parents[x]:
             self.parents[x] = self.find(self.parents[x])
         return self.parents[x]
 
-    def union(self, x, y):
+    def union(self, x, y): # Cette méthode permet de joindre deux classes d'équivalences
         root_x, root_y = self.find(x), self.find(y)
         if root_x == root_y:
             return False
@@ -274,7 +275,7 @@ def kruskal(g):
     return mst
     
 
-def min_power2(g, src, dest):
+def min_power2(g, src, dest):  # Fonction utilisant le mst pour trouver un chemin de puissance miniamel entre src et dest
     mst = kruskal(g)
 
     visited_nodes = {node: False for node in mst.nodes}
@@ -297,10 +298,10 @@ def min_power2(g, src, dest):
     while path[-1] != src:
         path.append(parent[path[-1]])
     path.reverse()
-    min_power = sys.maxsize
+    min_power = 0
     for i in range(len(path) - 1):
         for neighbour, power, dist in mst.graph[path[i]]:
-            if neighbour == path[i+1] and min_power > power:
+            if neighbour == path[i+1] and min_power < power:
                 min_power = power
     return path, min_power
 
