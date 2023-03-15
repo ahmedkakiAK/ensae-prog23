@@ -101,7 +101,7 @@ class Graph:
                         if neighbor not in visited:
                             queue.append((neighbor, path + [node]))
         return None
-
+# L'algorithme précédent utilise le parcours en largeur d'un graphe, sa complexité est donc O(s+a) où S est le nombre de noeuds et A le nombre d'arêtes
     
     def get_shortest_path_with_power(self, src, dest, power): # Fonction utilisant l'algorithme de dijkstra pour trouver le plus court chemin entre src et dest
         for cc in self.connected_components():
@@ -140,7 +140,7 @@ class Graph:
                 
                 visited = disjkstra(temp_graph, src)
                 return visited[dest][1]
-            
+#La fonction précédente utilise l'algorithme de dijkstra de complexité O(a + slog(s)) 
 
     
                     
@@ -193,7 +193,7 @@ class Graph:
             power = None
         return path, power        
 
-                    
+# Complexité : O(slog(s))                  
                 
 
 
@@ -244,7 +244,7 @@ class UnionFind: # Création de la classe UnionFind qui nous permettra de vérif
     def find(self, x): # Cette méthode permet de toruver la classe d'équivalence de l'élément x
         if x != self.parents[x]:
             self.parents[x] = self.find(self.parents[x])
-        return self.parents[x]
+        return self.parents[x] 
 
     def union(self, x, y): # Cette méthode permet de joindre deux classes d'équivalences
         root_x, root_y = self.find(x), self.find(y)
@@ -255,7 +255,7 @@ class UnionFind: # Création de la classe UnionFind qui nous permettra de vérif
         self.parents[root_y] = root_x
         self.sizes[root_x] += self.sizes[root_y]
         return True
-
+# Les méthodes find et union sont de complexité O(1)
 
 def kruskal(g):
     edges = []
@@ -269,11 +269,9 @@ def kruskal(g):
     for  power, node, neighbor in edges:
         if uf.union(node, neighbor):
             mst.graph[node].append((neighbor, power, 1))
-            mst.graph[neighbor].append((node, power, 1))
-
-            
+            mst.graph[neighbor].append((node, power, 1))         
     return mst
-    
+# Cet alogrithme est de complexité O(a*alpha(s)) où alpha est la fonction d'Ackerman qu'on peut considérer comme constante donc O(a)    
 
 def min_power2(g, src, dest):  # Fonction utilisant le mst pour trouver un chemin de puissance miniamel entre src et dest
     mst = kruskal(g)
@@ -305,7 +303,7 @@ def min_power2(g, src, dest):  # Fonction utilisant le mst pour trouver un chemi
                 min_power = power
     return path, min_power
 
-
+# Cette fonction utilisant l'algorithem de kruskal et celui de dfs, sa complexité est de O(s+a)
 
 
 

@@ -41,4 +41,4 @@ def duration2(i): # Fonction permettant de calculer le temps d'exécution de min
 
     return sum(times)
 
-print(duration2(2))
+
