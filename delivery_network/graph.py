@@ -1,6 +1,7 @@
+from collections import deque
 import time
 import sys
-
+import math
 
 class Graph:
     """
@@ -8,7 +9,7 @@ class Graph:
     Attributes: 
     -----------
     nodes: NodeType
-        A list of nodes. Nodes can be of any immutable type, e.g., integer, float, or string.
+        A list of nodes. Nodes can be of any immutable type, e.tree., integer, float, or string.
         We will usually use a list of integers 1, ..., n.
     graph: dict
         A dictionnary that contains the adjacency list of each node in the form
@@ -33,6 +34,8 @@ class Graph:
         self.nb_nodes = len(nodes)
         self.nb_edges = 0
         self.powers = []
+        self.edges = []
+        
     
 
     def __str__(self):
@@ -60,7 +63,7 @@ class Graph:
         dist: numeric (int or float), optional
             Distance between node1 and node2 on the edge. Default is 1.
         """
-        if node1 not in self.graph:
+        if node1 not in self.graph: 
             self.graph[node1] = []
             self.nb_nodes += 1
             self.nodes.append(node1)
@@ -101,7 +104,7 @@ class Graph:
                         if neighbor not in visited:
                             queue.append((neighbor, path + [node]))
         return None
-# L'algorithme précédent utilise le parcours en largeur d'un graphe, sa complexité est donc O(s+a) où S est le nombre de noeuds et A le nombre d'arêtes
+# L'algorithme précédent utilise le parcours en largeur d'un graphe, sa complexité est donc O(v+e) où S est le nombre de noeuds et A le nombre d'arêtes
     
     def get_shortest_path_with_power(self, src, dest, power): # Fonction utilisant l'algorithme de dijkstra pour trouver le plus court chemin entre src et dest
         for cc in self.connected_components():
@@ -114,17 +117,17 @@ class Graph:
                         if tuple[1] > power:
                             temp_graph[node].remove(tuple)
 
-                def disjkstra(g, s): # Prend en argument le graphe et la source
+                def disjkstra(tree, s): # Prend en argument le graphe et la source
                     inf = sys.maxsize
                     visited = {s: [0, [s]]} 
-                    unvisited = {node: [inf, ""] for node in g if node != s} # On donne à tous les noeuds non visités l'infini comme poids
-                    for neighbour, p, dist in g[s]:
+                    unvisited = {node: [inf, ""] for node in tree if node != s} # On donne à tous les noeuds non visités l'infini comme poids
+                    for neighbour, p, dist in tree[s]:
                         unvisited[neighbour] = [dist, s]
 
                     while unvisited and any(unvisited[node][0] < inf for node in unvisited):
                         min_node = min(unvisited, key = unvisited.get)
                         min_dist, previous_node = unvisited[min_node]
-                        for neighbour, p, dist in g[min_node]:
+                        for neighbour, p, dist in tree[min_node]:
                             if neighbour in unvisited:
                                 d = min_dist + dist
                                 if d < unvisited[neighbour][0]:
@@ -140,7 +143,7 @@ class Graph:
                 
                 visited = disjkstra(temp_graph, src)
                 return visited[dest][1]
-#La fonction précédente utilise l'algorithme de dijkstra de complexité O(a + slog(s)) 
+#La fonction précédente utilise l'algorithme de dijkstra et connected_components de complexité O(v(e + vlog(v))) 
 
     
                     
@@ -193,8 +196,10 @@ class Graph:
             power = None
         return path, power        
 
-# Complexité : O(slog(s))                  
-                
+# Complexité : O(vlog(v))      
+    
+    
+        
 
 
 
@@ -215,25 +220,25 @@ def graph_from_file(filename):
 
     Outputs: 
     -----------
-    g: Graph
+    tree: Graph
         An object of the class Graph with the graph from file_name.
     """
     with open(filename, "r") as file:
         n, m = map(int, file.readline().split())
-        g = Graph(range(1, n+1))
+        tree = Graph(range(1, n+1))
         for _ in range(m):
-            edge = list(map(int, file.readline().split()))
+            edge = list(map(float, file.readline().split()))
             if len(edge) == 3:
                 node1, node2, power_min = edge
-                g.add_edge(node1, node2, power_min, 1)
-                g.powers.append(power_min) # will add dist=1 by default
+                tree.add_edge(node1, node2, power_min, 1)
+                tree.powers.append(power_min) # will add dist=1 by default
             elif len(edge) == 4:
                 node1, node2, power_min, dist = edge
-                g.add_edge(node1, node2, power_min, dist)
-                g.powers.append(power_min)
+                tree.add_edge(node1, node2, power_min, dist)
+                tree.powers.append(power_min)
             else:
                 raise Exception("Format incorrect")
-    return g
+    return tree
 
 
 class UnionFind: # Création de la classe UnionFind qui nous permettra de vérifier si l'ajout d'un arête dans le mst constituera un cycle ou pas
@@ -257,15 +262,17 @@ class UnionFind: # Création de la classe UnionFind qui nous permettra de vérif
         return True
 # Les méthodes find et union sont de complexité O(1)
 
-def kruskal(g):
+def kruskal(tree):
+
+    
     edges = []
-    for node in g.nodes:
-        for neighbor, power, dist in g.graph[node]:
+    for node in tree.nodes:
+        for neighbor, power, dist in tree.graph[node]:
             edges.append((power, node, neighbor))
     edges.sort()
-    vertices = set(g.nodes)
+    vertices = set(tree.nodes)
     uf = UnionFind(vertices)
-    mst = Graph(g.nodes)
+    mst = Graph(tree.nodes)
     for  power, node, neighbor in edges:
         if uf.union(node, neighbor):
             mst.graph[node].append((neighbor, power, 1))
@@ -275,7 +282,13 @@ def kruskal(g):
 
 def min_power2(g, src, dest):  # Fonction utilisant le mst pour trouver un chemin de puissance miniamel entre src et dest
     mst = kruskal(g)
-
+    d = depths_nodes(mst)
+    tree = oriented_tree(mst, 1)
+    ancestors = binary_lifting(tree)
+    return lca(src, dest, d, ancestors)
+    
+    
+    """mst = kruskal(tree)
     visited_nodes = {node: False for node in mst.nodes}
     parent = {}
 
@@ -301,10 +314,77 @@ def min_power2(g, src, dest):  # Fonction utilisant le mst pour trouver un chemi
         for neighbour, power, dist in mst.graph[path[i]]:
             if neighbour == path[i+1] and min_power < power:
                 min_power = power
-    return path, min_power
+    return min_power"""
 
-# Cette fonction utilisant l'algorithem de kruskal et celui de dfs, sa complexité est de O(s+a)
+# Cette fonction utilisant l'algorithme de kruskal et celui de dfs, sa complexité est de O(s+a)
 
+
+def oriented_tree(mst, root): # Fonction permettant de transformer un arbre de classe Graph en arbre orienté enfants-parents de racine root
+    tree = {root: []} # arbre affichant pour chaque enfant son parent
+    queue = deque([root])
+    visited = {root}
+    while queue:
+        parent = queue.popleft()
+        for neighbor, p, dist in mst.graph[parent]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                tree[neighbor] = [(parent, p, dist)]
+                queue.append(neighbor)
+    return tree
+# Cette fontion utilise un bfs donc elle est de complexité O(n)
+
+
+
+def binary_lifting(tree): # Pré-processing pour trouver le 2**i-ème ancêtre d'un noeud
+    n = len(tree)
+    up = {node: [(-1,0) for i in range(int(math.log2(n))+1)] for node in tree.keys()} # Dictionnaire qui à chaque noeud associe son 2**i-ème ancêtre et sa puissance
+    tree[1] = [(-1,0,0)] # Ancêtre dans l'arbre
+    for v in tree.keys():
+        up[v][0] = (tree[v][0][0], tree[v][0][1])
+    for i in range(1, int(math.log2(n))+1):
+        for v in tree.keys():
+            if up[v][i-1][0] != -1 and up[up[v][i-1][0]][i-1][0] != -1:
+                up[v][i] = up[up[v][i-1][0]][i-1][0], max(up[v][i-1][1],up[up[v][i-1][0]][i-1][1]) 
+            elif up[v][i-1][0] != -1 and up[up[v][i-1][0]][i-1][0] == -1:
+                up[v][i] = up[up[v][i-1][0]][i-1][0],0 
+    return up
+# La complexité de cette fonction est O(vlogv) car elle contient de boucles imbriquées de taille log2(v) et v
+
+
+def depths_nodes(mst): 
+    depths={node:0 for node in mst.nodes}
+    queue = deque([1]) # 1 est la racine de l'arbre mst
+    visited = {1}
+    while queue:
+        noeud = queue.popleft()
+        for child in mst.graph[noeud]:
+            if child[0] not in visited:
+                visited.add(child[0])
+                depths[child[0]]=depths[noeud]+1
+                queue.append(child[0])
+    return depths
+# La comlplexité de cette fonction est O(v) car c'est un bfs
+
+#Question 16
+def lca(src, dest, depth, ancestors):
+    log_n = int(math.log2(len(depth)))
+    if depth[src] < depth[dest]:
+        src, dest = dest, src
+    powers = [0] # Liste qui contiendra toutes les puissances le long du chemin jusqu'au plus petit ancêtre commun
+    for i in range(log_n, -1, -1):
+        if depth[src]-2**i >= depth[dest]:
+            powers  += [ancestors[src][i][1]]
+            src = ancestors[src][i][0]
+    if src == dest:
+        return max(powers)
+    for k in range(log_n,-1,-1):
+        if (ancestors[dest][k][0]!=-1) and (ancestors[dest][k][0]!=ancestors[src][k][0]):
+            powers  += [ancestors[src][k][1]] 
+            powers  += [ancestors[dest][k][1]]
+            dest = ancestors[dest][k][0]
+            src = ancestors[src][k][0]
+    powers += [ancestors[src][0][1],ancestors[dest][0][1]] 
+    return max(powers ) # On prend le max de toutes les puissances enregistrées pour arriver au LCA
 
 
 
